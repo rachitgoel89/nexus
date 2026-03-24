@@ -2,6 +2,10 @@
 
 Tokyo Night themed status bar for Claude Code — time, model, context window, cost, git branch, and stash count at a glance.
 
+```
+22:13 | Sonnet 4.6 | [▓▶░░░░░░░░] 36.0k/200k (18%) | 💰 $0.41 | ⎇ main | ⎇ 2 stashed
+```
+
 ![nexus preview](assets/preview.png)
 
 ## Installation

@@ -74,10 +74,10 @@ with open(settings_path) as f:
     settings = json.load(f)
 
 marketplaces = settings.get('extraKnownMarketplaces', {})
-marketplaces['raygoel'] = {
+marketplaces['rachitgoel89'] = {
     'source': {
         'source': 'github',
-        'repo': 'raygoel/nexus',
+        'repo': 'rachitgoel89/nexus',
         'ref': 'main'
     }
 }
@@ -87,7 +87,7 @@ with open(settings_path, 'w') as f:
     json.dump(settings, f, indent=2)
     f.write('\n')
 
-print('Marketplace registered: raygoel/nexus on GitHub')
+print('Marketplace registered: rachitgoel89/nexus on GitHub')
 EOF
 
 echo ""

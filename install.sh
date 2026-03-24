@@ -7,7 +7,7 @@
 set -e
 
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
-PLUGIN_CACHE="$HOME/.claude/plugins/cache/raygoel/nexus/1.0.0"
+PLUGIN_CACHE="$HOME/.claude/plugins/cache/rachitgoel89/nexus/1.0.0"
 SETTINGS="$HOME/.claude/settings.json"
 
 echo ""
@@ -72,13 +72,13 @@ settings['statusLine'] = {
 
 # enabledPlugins — remove old docket, add nexus
 plugins = settings.get('enabledPlugins', {})
-plugins.pop('docket@raygoel', None)
-plugins['nexus@raygoel'] = True
+plugins.pop('docket@rachitgoel89', None)
+plugins['nexus@rachitgoel89'] = True
 settings['enabledPlugins'] = plugins
 
 # extraKnownMarketplaces — register GitHub source
 marketplaces = settings.get('extraKnownMarketplaces', {})
-marketplaces['raygoel'] = {
+marketplaces['rachitgoel89'] = {
     'source': {
         'source': 'github',
         'repo': 'rachitgoel89/nexus',
@@ -92,7 +92,7 @@ with open(settings_path, 'w') as f:
     f.write('\n')
 
 print(f'  [OK] statusLine configured')
-print(f'  [OK] Plugin enabled: nexus@raygoel')
+print(f'  [OK] Plugin enabled: nexus@rachitgoel89')
 print(f'  [OK] Marketplace registered: rachitgoel89/nexus')
 EOF
 

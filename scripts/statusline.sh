@@ -2,7 +2,7 @@
 
 # =============================================================================
 # nexus — Claude Code Status Bar
-# https://github.com/raygoel/nexus
+# https://github.com/rachitgoel89/nexus
 #
 # Shows: Time | Model | Context Usage | Cost | Git Branch | Stash Count
 #

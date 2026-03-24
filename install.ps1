@@ -8,7 +8,7 @@
 $ErrorActionPreference = 'Stop'
 
 $RepoRoot   = Split-Path -Parent $MyInvocation.MyCommand.Path
-$PluginCache = "$env:APPDATA\Claude\plugins\cache\raygoel\nexus\1.0.0"
+$PluginCache = "$env:APPDATA\Claude\plugins\cache\rachitgoel89\nexus\1.0.0"
 $Settings    = "$env:APPDATA\Claude\settings.json"
 
 Write-Host ""
@@ -73,12 +73,12 @@ settings['statusLine'] = {
 }
 
 plugins = settings.get('enabledPlugins', {})
-plugins.pop('docket@raygoel', None)
-plugins['nexus@raygoel'] = True
+plugins.pop('docket@rachitgoel89', None)
+plugins['nexus@rachitgoel89'] = True
 settings['enabledPlugins'] = plugins
 
 marketplaces = settings.get('extraKnownMarketplaces', {})
-marketplaces['raygoel'] = {
+marketplaces['rachitgoel89'] = {
     'source': {
         'source': 'github',
         'repo': 'rachitgoel89/nexus',
@@ -92,7 +92,7 @@ with open(settings_path, 'w') as f:
     f.write('\n')
 
 print('  [OK] statusLine configured')
-print('  [OK] Plugin enabled: nexus@raygoel')
+print('  [OK] Plugin enabled: nexus@rachitgoel89')
 print('  [OK] Marketplace registered: rachitgoel89/nexus')
 '@
 

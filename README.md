@@ -7,7 +7,7 @@ Tokyo Night themed status bar for Claude Code — time, model, context window, c
 ### Via Claude Code plugin system
 
 ```
-claude plugin install raygoel/nexus
+claude plugin install rachitgoel89/nexus
 ```
 
 ### Manual
@@ -26,7 +26,7 @@ Once installed, you can update nexus to the latest version with:
 claude plugin update nexus
 ```
 
-The installer registers the `raygoel/nexus` GitHub marketplace so Claude Code knows where to fetch updates from.
+The installer registers the `rachitgoel89/nexus` GitHub marketplace so Claude Code knows where to fetch updates from.
 
 ## Uninstalling
 

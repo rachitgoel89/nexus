@@ -1,6 +1,6 @@
 {
   "name": "nexus",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Tokyo Night themed status bar for Claude Code — time, model, context window, cost, git branch, and stash count at a glance.",
   "author": {
     "name": "Rachit (Ray) Goel",

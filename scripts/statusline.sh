@@ -122,6 +122,10 @@ if [ -n "$used_pct" ]; then
   bar_empty=$(( 10 - bar_filled ))
   bar=""
   for (( i=0; i<bar_filled; i++ )); do bar="${bar}▓"; done
+  if [ "$bar_filled" -lt 10 ]; then
+    bar="${bar}▶"
+    bar_empty=$(( bar_empty - 1 ))
+  fi
   for (( i=0; i<bar_empty; i++ )); do bar="${bar}░"; done
 
   if [ -n "$ctx_window_size" ]; then

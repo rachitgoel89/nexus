@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Tokyo Night themed status bar for Claude Code — time, model, context window, cost, git branch, and stash count at a glance.",
   "author": {
-    "name": "Ray Goel",
-    "email": "raygoel@gmail.com"
+    "name": "Rachit (Ray) Goel",
+    "email": "rachit.goel89@gmail.com"
   },
   "keywords": ["statusline", "status-bar", "tokyo-night", "git", "context-window"]
 }

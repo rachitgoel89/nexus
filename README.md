@@ -1,0 +1,41 @@
+# nexus
+
+Tokyo Night themed status bar for Claude Code — time, model, context window, cost, git branch, and stash count at a glance.
+
+## Installation
+
+### Via Claude Code plugin system
+
+```
+claude plugin install raygoel/nexus
+```
+
+### Manual
+
+```bash
+bash scripts/setup.sh
+```
+
+Restart Claude Code (or start a new session) after installing.
+
+## Updating
+
+Once installed, you can update nexus to the latest version with:
+
+```
+claude plugin update nexus
+```
+
+The installer registers the `raygoel/nexus` GitHub marketplace so Claude Code knows where to fetch updates from.
+
+## Uninstalling
+
+```
+claude plugin uninstall nexus
+```
+
+Or manually:
+
+```bash
+bash scripts/uninstall.sh
+```

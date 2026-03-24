@@ -13,6 +13,14 @@ claude plugin marketplace add rachitgoel89/nexus
 claude plugin install nexus@rachitgoel89
 ```
 
+Then inside Claude Code, run:
+
+```
+/nexus:setup
+```
+
+Restart Claude Code (or start a new session) to activate the status bar.
+
 ### Manual
 
 ```bash

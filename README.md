@@ -9,7 +9,8 @@ Tokyo Night themed status bar for Claude Code — time, model, context window, c
 ### Via Claude Code plugin system
 
 ```
-claude plugin install rachitgoel89/nexus
+claude plugin marketplace add rachitgoel89/nexus
+claude plugin install nexus@rachitgoel89
 ```
 
 ### Manual

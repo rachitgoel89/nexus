@@ -1,0 +1,16 @@
+{
+  "name": "rachitgoel89",
+  "owner": {
+    "name": "Rachit (Ray) Goel",
+    "email": "rachit.goel89@gmail.com",
+    "url": "https://github.com/rachitgoel89"
+  },
+  "plugins": [
+    {
+      "name": "nexus",
+      "source": "./",
+      "description": "Tokyo Night themed status bar for Claude Code — time, model, context window, cost, git branch, and stash count at a glance.",
+      "version": "1.0.0"
+    }
+  ]
+}

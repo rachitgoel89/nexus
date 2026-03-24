@@ -7,7 +7,8 @@
 set -e
 
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
-PLUGIN_CACHE="$HOME/.claude/plugins/cache/rachitgoel89/nexus/1.0.0"
+VERSION=$(python3 -c "import json; print(json.load(open('$REPO_ROOT/.claude-plugin/plugin.json'))['version'])" 2>/dev/null || echo "1.0.0")
+PLUGIN_CACHE="$HOME/.claude/plugins/cache/rachitgoel89/nexus/${VERSION}"
 SETTINGS="$HOME/.claude/settings.json"
 
 echo ""
@@ -17,7 +18,7 @@ echo ""
 
 # -- Dependency check ---------------------------------------------------------
 missing=()
-for dep in jq bc python3; do
+for dep in jq python3; do
   command -v "$dep" &>/dev/null || missing+=("$dep")
 done
 
@@ -37,7 +38,7 @@ if [ ${#missing[@]} -gt 0 ]; then
   exit 1
 fi
 
-echo "  [OK] Dependencies: jq, bc, python3"
+echo "  [OK] Dependencies: jq, python3"
 
 # -- Validate Claude settings exist -------------------------------------------
 if [ ! -f "$SETTINGS" ]; then

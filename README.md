@@ -2,6 +2,8 @@
 
 Tokyo Night themed status bar for Claude Code — time, model, context window, cost, git branch, and stash count at a glance.
 
+![nexus preview](assets/preview.png)
+
 ## Installation
 
 ### Via Claude Code plugin system

@@ -52,8 +52,11 @@ CACHE_FILE="/tmp/nexus-git-cache"
 CACHE_MAX_AGE=5
 
 cache_is_stale() {
-    [ ! -f "$CACHE_FILE" ] || \
-    [ $(($(date +%s) - $(stat -f %m "$CACHE_FILE" 2>/dev/null || echo 0))) -gt $CACHE_MAX_AGE ]
+    if [ ! -f "$CACHE_FILE" ]; then return 0; fi
+    local current file_time
+    current=$(date +%s)
+    file_time=$(stat -c %Y "$CACHE_FILE" 2>/dev/null || stat -f %m "$CACHE_FILE" 2>/dev/null || echo 0)
+    [ $((current - file_time)) -gt $CACHE_MAX_AGE ]
 }
 
 if cd "$cwd" 2>/dev/null; then
@@ -62,6 +65,7 @@ if cd "$cwd" 2>/dev/null; then
     if [ -n "$branch" ]; then
       git_branch="$branch"
       echo "$git_branch" > "$CACHE_FILE"
+      chmod 600 "$CACHE_FILE" 2>/dev/null
     fi
   else
     git_branch=$(cat "$CACHE_FILE" 2>/dev/null || echo "no-git")
@@ -74,7 +78,7 @@ branch_display=$(printf "${TN_TEAL}⎇ ${TN_GREEN}${BOLD}%s${RESET}" "$git_branc
 cost_usd=$(echo "$input" | jq -r '.cost.total_cost_usd // empty')
 
 cost_display=""
-if [ -n "$cost_usd" ] && [ "$(echo "$cost_usd > 0" | bc -l 2>/dev/null)" = "1" ]; then
+if [ -n "$cost_usd" ] && [ "$(echo "$cost_usd" | awk '{print ($1 > 0)}')" = "1" ]; then
   cost_int=$(echo "$cost_usd" | awk '{printf "%.0f", $1}')
   if [ "$cost_int" -ge 250 ]; then
     cost_color="$TN_ROSE"
@@ -120,7 +124,9 @@ if [ -n "$used_pct" ]; then
   for (( i=0; i<bar_filled; i++ )); do bar="${bar}▓"; done
   for (( i=0; i<bar_empty; i++ )); do bar="${bar}░"; done
 
-  display_tokens=$(awk "BEGIN {printf \"%.0f\", $used_pct * $ctx_window_size / 100}")
+  if [ -n "$ctx_window_size" ]; then
+    display_tokens=$(awk "BEGIN {printf \"%.0f\", $used_pct * $ctx_window_size / 100}")
+  fi
 
   if [ -n "$display_tokens" ] && [ "$display_tokens" != "0" ]; then
     used_k=$(echo "$display_tokens" | awk '{printf "%.1fk", $1/1000}')

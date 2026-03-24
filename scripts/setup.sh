@@ -12,7 +12,7 @@ echo ""
 
 # -- Dependency check ---------------------------------------------------------
 missing=()
-for dep in jq bc; do
+for dep in jq; do
   if ! command -v "$dep" &>/dev/null; then
     missing+=("$dep")
   fi
@@ -34,7 +34,7 @@ if [ ${#missing[@]} -gt 0 ]; then
   exit 1
 fi
 
-echo "OK: Dependencies found (jq, bc)"
+echo "OK: Dependencies found (jq)"
 
 # -- Validate settings.json exists --------------------------------------------
 if [ ! -f "$SETTINGS" ]; then

@@ -16,8 +16,6 @@ Tokyo Night themed status bar for Claude Code — time, model, context window, c
 00:42 | ⏱ 1h06m | Opus 4.6 | [▓▓▓▓▓▶░░░░░] 108,994/200k (54%) | 💰 $2.15 | ⎇ main
 ```
 
-> Screenshot below shows v1.1.0 — updated preview coming.
-
 ![nexus preview](assets/preview.png)
 
 ## How it works

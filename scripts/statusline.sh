@@ -67,6 +67,7 @@ model=$(echo "$raw_model" \
 
 # -- Git branch (with 5-second cache) ----------------------------------------
 cwd=$(echo "$input" | jq -r '.workspace.current_dir // "."')
+cwd_hash=$(python3 -c "import hashlib, sys; print(hashlib.md5(sys.argv[1].encode()).hexdigest()[:8])" "$cwd" 2>/dev/null)
 git_branch="no-git"
 
 CACHE_FILE="/tmp/nexus-git-cache"
@@ -129,10 +130,17 @@ ctx_window_size=$(echo "$input" | jq -r '.context_window.context_window_size // 
 ctx_display="${TN_COMMENT}n/a${RESET}"
 
 if [ -n "$used_pct" ]; then
-  # Try to use hook-sourced accurate token data
-  TOKEN_CACHE="/tmp/nexus-token-cache.json"
+  # Look up session_id for this workspace via the per-cwd pointer
+  TOKEN_CACHE=""
+  if [ -n "$cwd_hash" ] && [ -f "/tmp/nexus-sid-${cwd_hash}" ]; then
+    sid=$(cat "/tmp/nexus-sid-${cwd_hash}" 2>/dev/null)
+    if [ -n "$sid" ]; then
+      TOKEN_CACHE="/tmp/nexus-token-${sid}.json"
+    fi
+  fi
+
   hook_tokens=""
-  if [ -f "$TOKEN_CACHE" ]; then
+  if [ -n "$TOKEN_CACHE" ] && [ -f "$TOKEN_CACHE" ]; then
     cache_age=$(( $(date +%s) - $(stat -c %Y "$TOKEN_CACHE" 2>/dev/null || stat -f %m "$TOKEN_CACHE" 2>/dev/null || echo 0) ))
     if [ "$cache_age" -lt 60 ]; then
       hook_tokens=$(jq -r 'if .total_input then (.total_input | floor) else "" end' "$TOKEN_CACHE" 2>/dev/null)
@@ -189,8 +197,13 @@ current_time=$(date +"%H:%M")
 
 # -- Session duration -----------------------------------------------------------
 session_duration=""
-SESSION_START_FILE="/tmp/nexus-session-start"
-if [ -f "$SESSION_START_FILE" ]; then
+if [ -n "$cwd_hash" ] && [ -f "/tmp/nexus-sid-${cwd_hash}" ]; then
+  sid=$(cat "/tmp/nexus-sid-${cwd_hash}" 2>/dev/null)
+  SESSION_START_FILE="/tmp/nexus-session-start-${sid}"
+else
+  SESSION_START_FILE=""
+fi
+if [ -n "$SESSION_START_FILE" ] && [ -f "$SESSION_START_FILE" ]; then
   session_start=$(cat "$SESSION_START_FILE" 2>/dev/null)
   if [ -n "$session_start" ]; then
     now=$(date +%s)

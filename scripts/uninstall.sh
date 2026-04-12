@@ -72,5 +72,5 @@ if [ -d "$PLUGIN_CACHE" ]; then
 fi
 
 # -- Clean up cache files ------------------------------------------------------
-rm -f /tmp/nexus-token-cache.json /tmp/nexus-session-start /tmp/nexus-git-cache
+rm -f /tmp/nexus-token-*.json /tmp/nexus-session-start-* /tmp/nexus-sid-* /tmp/nexus-git-cache
 echo "OK: Cache files cleaned"

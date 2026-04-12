@@ -111,14 +111,28 @@ $ctx_window_size = if ($data.context_window.context_window_size) { $data.context
 $ctx_display = "${TN_COMMENT}n/a${RESET}"
 
 if ($null -ne $used_pct) {
-    # Try hook-sourced accurate token data
-    $token_cache = "$env:TEMP\nexus-token-cache.json"
+    # Look up session_id via per-cwd pointer
+    $TOKEN_CACHE = $null
+    $cwd_ps = $data.workspace.current_dir
+    if ($cwd_ps) {
+        $cwd_bytes = [System.Text.Encoding]::UTF8.GetBytes($cwd_ps)
+        $md5 = [System.Security.Cryptography.MD5]::Create()
+        $hash_bytes = $md5.ComputeHash($cwd_bytes)
+        $cwd_hash_ps = ([BitConverter]::ToString($hash_bytes) -replace '-','').Substring(0,8).ToLower()
+        $sid_file = "$env:TEMP\nexus-sid-$cwd_hash_ps"
+        if (Test-Path $sid_file) {
+            $sid_ps = (Get-Content $sid_file -Raw -ErrorAction SilentlyContinue).Trim()
+            if ($sid_ps) {
+                $TOKEN_CACHE = "$env:TEMP\nexus-token-$sid_ps.json"
+            }
+        }
+    }
     $hook_tokens = $null
-    if (Test-Path $token_cache) {
-        $cache_age = (Get-Date) - (Get-Item $token_cache).LastWriteTime
+    if ($TOKEN_CACHE -and (Test-Path $TOKEN_CACHE)) {
+        $cache_age = (Get-Date) - (Get-Item $TOKEN_CACHE).LastWriteTime
         if ($cache_age.TotalSeconds -lt 60) {
             try {
-                $tc = Get-Content $token_cache -Raw | ConvertFrom-Json
+                $tc = Get-Content $TOKEN_CACHE -Raw | ConvertFrom-Json
                 $hook_tokens = $tc.total_input
             } catch {}
         }
@@ -160,8 +174,12 @@ $current_time = (Get-Date).ToString("HH:mm")
 
 # -- Session duration -----------------------------------------------------------
 $session_duration = ""
-$session_start_file = "$env:TEMP\nexus-session-start"
-if (Test-Path $session_start_file) {
+$session_start_file = $null
+if ($cwd_hash_ps -and (Test-Path "$env:TEMP\nexus-sid-$cwd_hash_ps")) {
+    $sid_ps2 = (Get-Content "$env:TEMP\nexus-sid-$cwd_hash_ps" -Raw -ErrorAction SilentlyContinue).Trim()
+    if ($sid_ps2) { $session_start_file = "$env:TEMP\nexus-session-start-$sid_ps2" }
+}
+if ($session_start_file -and (Test-Path $session_start_file)) {
     try {
         $session_start = [int64](Get-Content $session_start_file -Raw).Trim()
         $now = [int64](Get-Date -UFormat %s)

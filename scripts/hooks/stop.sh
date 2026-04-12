@@ -61,4 +61,13 @@ fi
 mv "$tmp_cache" "$CACHE"
 chmod 600 "$CACHE" 2>/dev/null
 
+# Seed session start timestamp if missing (handles sessions that predate hook install)
+SESSION_START_FILE="/tmp/nexus-session-start-${session_id}"
+if [ ! -f "$SESSION_START_FILE" ]; then
+  tmp_ts="${SESSION_START_FILE}.tmp.$$"
+  date +%s > "$tmp_ts"
+  mv "$tmp_ts" "$SESSION_START_FILE"
+  chmod 600 "$SESSION_START_FILE" 2>/dev/null
+fi
+
 exit 0

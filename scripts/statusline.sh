@@ -68,6 +68,10 @@ model=$(echo "$raw_model" \
 # -- Git branch (with 5-second cache) ----------------------------------------
 cwd=$(echo "$input" | jq -r '.workspace.current_dir // "."')
 cwd_hash=$(python3 -c "import hashlib, sys; print(hashlib.md5(sys.argv[1].encode()).hexdigest()[:8])" "$cwd" 2>/dev/null)
+sid=""
+if [ -n "$cwd_hash" ] && [ -f "/tmp/nexus-sid-${cwd_hash}" ]; then
+  sid=$(cat "/tmp/nexus-sid-${cwd_hash}" 2>/dev/null)
+fi
 git_branch="no-git"
 
 CACHE_FILE="/tmp/nexus-git-cache"
@@ -130,13 +134,9 @@ ctx_window_size=$(echo "$input" | jq -r '.context_window.context_window_size // 
 ctx_display="${TN_COMMENT}n/a${RESET}"
 
 if [ -n "$used_pct" ]; then
-  # Look up session_id for this workspace via the per-cwd pointer
   TOKEN_CACHE=""
-  if [ -n "$cwd_hash" ] && [ -f "/tmp/nexus-sid-${cwd_hash}" ]; then
-    sid=$(cat "/tmp/nexus-sid-${cwd_hash}" 2>/dev/null)
-    if [ -n "$sid" ]; then
-      TOKEN_CACHE="/tmp/nexus-token-${sid}.json"
-    fi
+  if [ -n "$sid" ]; then
+    TOKEN_CACHE="/tmp/nexus-token-${sid}.json"
   fi
 
   hook_tokens=""
@@ -197,11 +197,9 @@ current_time=$(date +"%H:%M")
 
 # -- Session duration -----------------------------------------------------------
 session_duration=""
-if [ -n "$cwd_hash" ] && [ -f "/tmp/nexus-sid-${cwd_hash}" ]; then
-  sid=$(cat "/tmp/nexus-sid-${cwd_hash}" 2>/dev/null)
+SESSION_START_FILE=""
+if [ -n "$sid" ]; then
   SESSION_START_FILE="/tmp/nexus-session-start-${sid}"
-else
-  SESSION_START_FILE=""
 fi
 if [ -n "$SESSION_START_FILE" ] && [ -f "$SESSION_START_FILE" ]; then
   session_start=$(cat "$SESSION_START_FILE" 2>/dev/null)

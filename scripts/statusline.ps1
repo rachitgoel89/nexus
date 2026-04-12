@@ -30,6 +30,18 @@ $DIM         = dim
 
 $SEP = "${TN_SLATE}${DIM} | ${RESET}"
 
+# -- Adaptive token formatter --------------------------------------------------
+function Format-Tokens($n) {
+    if ($n -lt 1000) { return "$n" }
+    if ($n -lt 100000) { return "$([math]::Round($n / 1000, 1))k" }
+    return "$([math]::Round($n / 1000))k"
+}
+
+# -- Exact token formatter with comma separators (for hook-sourced data) ------
+function Format-Exact($n) {
+    return $n.ToString("N0")
+}
+
 # -- Model name ---------------------------------------------------------------
 $raw_model = $data.model.model_id
 if (-not $raw_model) { $raw_model = $data.model.display_name }
@@ -93,24 +105,51 @@ if ($git_branch -ne "no-git") {
 }
 
 # -- Context window with visual bar -------------------------------------------
-$used_pct      = $data.context_window.used_percentage
+$used_pct        = $data.context_window.used_percentage
 $ctx_window_size = if ($data.context_window.context_window_size) { $data.context_window.context_window_size } else { 200000 }
 
 $ctx_display = "${TN_COMMENT}n/a${RESET}"
 
 if ($null -ne $used_pct) {
-    $used_int = [math]::Round($used_pct)
+    # Try hook-sourced accurate token data
+    $token_cache = "$env:TEMP\nexus-token-cache.json"
+    $hook_tokens = $null
+    if (Test-Path $token_cache) {
+        $cache_age = (Get-Date) - (Get-Item $token_cache).LastWriteTime
+        if ($cache_age.TotalSeconds -lt 60) {
+            try {
+                $tc = Get-Content $token_cache -Raw | ConvertFrom-Json
+                $hook_tokens = $tc.total_input
+            } catch {}
+        }
+    }
+
+    $using_hook = $false
+    if ($hook_tokens -and $hook_tokens -gt 0) {
+        $display_tokens = $hook_tokens
+        $used_int = [math]::Round($hook_tokens * 100 / $ctx_window_size)
+        $using_hook = $true
+    } else {
+        $used_int = [math]::Round($used_pct)
+        $display_tokens = [math]::Round($used_pct * $ctx_window_size / 100)
+    }
+
+    $used_int = [math]::Max(0, [math]::Min(100, $used_int))
     $ctx_color = if ($used_int -ge 75) { $TN_ROSE } elseif ($used_int -ge 50) { $TN_GOLD } else { $TN_BLUE }
 
     $bar_filled = [math]::Floor($used_int / 10)
     $bar_empty  = 10 - $bar_filled
-    $bar        = ("▓" * $bar_filled) + ("░" * $bar_empty)
+    $bar = ("▓" * $bar_filled)
+    if ($bar_filled -lt 10) {
+        $bar += "▶"
+        $bar_empty -= 1
+    }
+    $bar += ("░" * [math]::Max(0, $bar_empty))
 
-    $display_tokens = [math]::Round($used_pct * $ctx_window_size / 100)
     if ($display_tokens -gt 0) {
-        $used_k  = "$([math]::Round($display_tokens / 1000, 1))k"
-        $limit_k = "$([math]::Round($ctx_window_size / 1000))k"
-        $ctx_display = "${ctx_color}[${bar}] ${TN_FG}${used_k}${TN_SLATE}/${TN_FG}${limit_k} ${ctx_color}(${used_int}%)${RESET}"
+        $used_fmt  = if ($using_hook) { Format-Exact $display_tokens } else { Format-Tokens $display_tokens }
+        $limit_fmt = Format-Tokens $ctx_window_size
+        $ctx_display = "${ctx_color}[${bar}] ${TN_FG}${used_fmt}${TN_SLATE}/${TN_FG}${limit_fmt} ${ctx_color}(${used_int}%)${RESET}"
     } else {
         $ctx_display = "${ctx_color}[${bar}] (${used_int}%)${RESET}"
     }
@@ -119,8 +158,31 @@ if ($null -ne $used_pct) {
 # -- Wall clock time ----------------------------------------------------------
 $current_time = (Get-Date).ToString("HH:mm")
 
+# -- Session duration -----------------------------------------------------------
+$session_duration = ""
+$session_start_file = "$env:TEMP\nexus-session-start"
+if (Test-Path $session_start_file) {
+    try {
+        $session_start = [int64](Get-Content $session_start_file -Raw).Trim()
+        $now = [int64](Get-Date -UFormat %s)
+        $elapsed = $now - $session_start
+        if ($elapsed -ge 3600) {
+            $hours = [math]::Floor($elapsed / 3600)
+            $mins  = [math]::Floor(($elapsed % 3600) / 60)
+            $session_duration = "${TN_COMMENT}⏱ ${hours}h$($mins.ToString('D2'))m${RESET}"
+        } elseif ($elapsed -ge 60) {
+            $mins = [math]::Floor($elapsed / 60)
+            $session_duration = "${TN_COMMENT}⏱ ${mins}m${RESET}"
+        } else {
+            $session_duration = "${TN_COMMENT}⏱ <1m${RESET}"
+        }
+    } catch {}
+}
+
 # -- Assemble output ----------------------------------------------------------
-$segments = @("${TN_COMMENT}${current_time}${RESET}", "${TN_LAVENDER}${BOLD}${model}${RESET}", $ctx_display)
+$segments = @("${TN_COMMENT}${current_time}${RESET}")
+if ($session_duration) { $segments += $session_duration }
+$segments += @("${TN_LAVENDER}${BOLD}${model}${RESET}", $ctx_display)
 if ($cost_display)  { $segments += $cost_display }
 $segments += $branch_display
 if ($stash_display) { $segments += $stash_display }

@@ -10,7 +10,7 @@
       "name": "nexus",
       "source": "./",
       "description": "Tokyo Night themed status bar for Claude Code — time, model, context window, cost, git branch, and stash count at a glance.",
-      "version": "1.1.0"
+      "version": "1.2.0"
     }
   ]
 }

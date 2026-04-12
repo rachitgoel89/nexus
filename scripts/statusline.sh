@@ -27,6 +27,27 @@ RESET=$'\033[0m'
 # Separator: dim slate pipe
 SEP="${TN_SLATE}${DIM} | ${RESET}"
 
+# -- Adaptive token formatter --------------------------------------------------
+# <1000 → raw (e.g. "800"), 1k-99.9k → one decimal (e.g. "36.0k"),
+# 100k+ → no decimal (e.g. "150k")
+format_tokens() {
+  local n="$1"
+  if [ "$n" -lt 1000 ] 2>/dev/null; then
+    echo "$n"
+  elif [ "$n" -lt 100000 ] 2>/dev/null; then
+    awk "BEGIN {printf \"%.1fk\", $n/1000}"
+  else
+    awk "BEGIN {printf \"%.0fk\", $n/1000}"
+  fi
+}
+
+# -- Exact token formatter with comma separators (for hook-sourced data) ------
+format_exact() {
+  local n="$1"
+  # Insert commas every 3 digits: 108994 → 108,994
+  printf "%d" "$n" | rev | sed 's/[0-9]\{3\}/&,/g' | rev | sed 's/^,//'
+}
+
 input=$(cat)
 
 # -- Model name ---------------------------------------------------------------
@@ -108,7 +129,29 @@ ctx_window_size=$(echo "$input" | jq -r '.context_window.context_window_size // 
 ctx_display="${TN_COMMENT}n/a${RESET}"
 
 if [ -n "$used_pct" ]; then
-  used_int=$(printf "%.0f" "$used_pct")
+  # Try to use hook-sourced accurate token data
+  TOKEN_CACHE="/tmp/nexus-token-cache.json"
+  hook_tokens=""
+  if [ -f "$TOKEN_CACHE" ]; then
+    cache_age=$(( $(date +%s) - $(stat -c %Y "$TOKEN_CACHE" 2>/dev/null || stat -f %m "$TOKEN_CACHE" 2>/dev/null || echo 0) ))
+    if [ "$cache_age" -lt 60 ]; then
+      hook_tokens=$(jq -r 'if .total_input then (.total_input | floor) else "" end' "$TOKEN_CACHE" 2>/dev/null)
+    fi
+  fi
+
+  using_hook=0
+  if [ -n "$hook_tokens" ] && [ "$hook_tokens" != "null" ] && [ "$hook_tokens" -gt 0 ] 2>/dev/null; then
+    display_tokens="$hook_tokens"
+    used_int=$(awk "BEGIN {printf \"%.0f\", $hook_tokens * 100 / $ctx_window_size}")
+    using_hook=1
+  else
+    used_int=$(printf "%.0f" "$used_pct")
+    display_tokens=$(awk "BEGIN {printf \"%.0f\", $used_pct * $ctx_window_size / 100}")
+  fi
+
+  # Clamp percentage to 0-100
+  [ "$used_int" -gt 100 ] 2>/dev/null && used_int=100
+  [ "$used_int" -lt 0 ] 2>/dev/null && used_int=0
 
   if [ "$used_int" -ge 75 ]; then
     ctx_color="$TN_ROSE"
@@ -128,14 +171,14 @@ if [ -n "$used_pct" ]; then
   fi
   for (( i=0; i<bar_empty; i++ )); do bar="${bar}░"; done
 
-  if [ -n "$ctx_window_size" ]; then
-    display_tokens=$(awk "BEGIN {printf \"%.0f\", $used_pct * $ctx_window_size / 100}")
-  fi
-
   if [ -n "$display_tokens" ] && [ "$display_tokens" != "0" ]; then
-    used_k=$(echo "$display_tokens" | awk '{printf "%.1fk", $1/1000}')
-    limit_k=$(echo "$ctx_window_size" | awk '{printf "%.0fk", $1/1000}')
-    ctx_display=$(printf "${ctx_color}[${bar}] ${TN_FG}%s${TN_SLATE}/${TN_FG}%s ${ctx_color}(%d%%)${RESET}" "$used_k" "$limit_k" "$used_int")
+    if [ "$using_hook" = "1" ]; then
+      used_fmt=$(format_exact "$display_tokens")
+    else
+      used_fmt=$(format_tokens "$display_tokens")
+    fi
+    limit_fmt=$(format_tokens "$ctx_window_size")
+    ctx_display=$(printf "${ctx_color}[${bar}] ${TN_FG}%s${TN_SLATE}/${TN_FG}%s ${ctx_color}(%d%%)${RESET}" "$used_fmt" "$limit_fmt" "$used_int")
   else
     ctx_display=$(printf "${ctx_color}[${bar}] (%d%%)${RESET}" "$used_int")
   fi
@@ -144,9 +187,31 @@ fi
 # -- Wall clock time ----------------------------------------------------------
 current_time=$(date +"%H:%M")
 
+# -- Session duration -----------------------------------------------------------
+session_duration=""
+SESSION_START_FILE="/tmp/nexus-session-start"
+if [ -f "$SESSION_START_FILE" ]; then
+  session_start=$(cat "$SESSION_START_FILE" 2>/dev/null)
+  if [ -n "$session_start" ]; then
+    now=$(date +%s)
+    elapsed=$(( now - session_start ))
+    if [ "$elapsed" -ge 3600 ]; then
+      hours=$(( elapsed / 3600 ))
+      mins=$(( (elapsed % 3600) / 60 ))
+      session_duration=$(printf "${TN_COMMENT}⏱ %dh%02dm${RESET}" "$hours" "$mins")
+    elif [ "$elapsed" -ge 60 ]; then
+      mins=$(( elapsed / 60 ))
+      session_duration=$(printf "${TN_COMMENT}⏱ %dm${RESET}" "$mins")
+    else
+      session_duration=$(printf "${TN_COMMENT}⏱ <1m${RESET}")
+    fi
+  fi
+fi
+
 # -- Final output -------------------------------------------------------------
 segments=()
 segments+=("$(printf "${TN_COMMENT}%s${RESET}" "$current_time")")
+[ -n "$session_duration" ] && segments+=("$session_duration")
 segments+=("$(printf "${TN_LAVENDER}${BOLD}%s${RESET}" "$model")")
 segments+=("$ctx_display")
 [ -n "$cost_display" ]   && segments+=("$cost_display")

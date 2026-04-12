@@ -90,5 +90,41 @@ with open(settings_path, 'w') as f:
 print('Marketplace registered: rachitgoel89/nexus on GitHub')
 EOF
 
+# -- Register hooks in settings.json ------------------------------------------
+python3 - "$SETTINGS" "$PLUGIN_ROOT" <<'HOOKEOF'
+import json, sys
+
+settings_path, plugin_root = sys.argv[1], sys.argv[2]
+
+with open(settings_path) as f:
+    settings = json.load(f)
+
+hooks = settings.setdefault('hooks', {})
+
+# Helper: append a nexus hook entry to an event, avoiding duplicates
+def add_hook(event_name, command):
+    event_hooks = hooks.setdefault(event_name, [])
+    # Check if nexus hook already exists in any matcher group
+    for group in event_hooks:
+        for h in group.get('hooks', []):
+            if 'nexus' in h.get('command', ''):
+                return  # Already registered
+    # Append to first matcher group if one exists, otherwise create one
+    nexus_hook = {'type': 'command', 'command': command, 'timeout': 3000}
+    if event_hooks:
+        event_hooks[0]['hooks'].append(nexus_hook)
+    else:
+        event_hooks.append({'matcher': '', 'hooks': [nexus_hook]})
+
+add_hook('Stop', f'bash {plugin_root}/scripts/hooks/stop.sh')
+add_hook('SessionStart', f'bash {plugin_root}/scripts/hooks/session-start.sh')
+
+with open(settings_path, 'w') as f:
+    json.dump(settings, f, indent=2)
+    f.write('\n')
+
+print('OK: Hooks registered (Stop, SessionStart)')
+HOOKEOF
+
 echo ""
 echo "Restart Claude Code (or start a new session) to activate nexus."
